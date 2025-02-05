@@ -1,0 +1,117 @@
+[gd_scene load_steps=2 format=3 uid="uid://bm2vitobycwsd"]
+
+[ext_resource type="Script" uid="uid://bhx3gqjeeyn4s" path="res://assets/scripts/ui/settings_menu.gd" id="1_05p07"]
+
+[node name="OptionsMenu" type="Node"]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_05p07")
+
+[node name="BackButton" type="Button" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.1
+anchor_right = 0.2
+anchor_bottom = 0.1
+offset_top = -15.5
+offset_bottom = 15.5
+grow_horizontal = 2
+grow_vertical = 2
+focus_neighbor_left = NodePath(".")
+focus_neighbor_top = NodePath(".")
+focus_neighbor_right = NodePath("../ApplyButton")
+focus_neighbor_bottom = NodePath("../TabContainer/Graphics")
+focus_next = NodePath("../TabContainer/Graphics")
+focus_previous = NodePath(".")
+text = "Back"
+
+[node name="SettingsTittle" type="Label" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.1
+anchor_right = 0.5
+anchor_bottom = 0.1
+grow_horizontal = 2
+grow_vertical = 2
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="ApplyButton" type="Button" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.8
+anchor_top = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.1
+grow_horizontal = 2
+grow_vertical = 2
+text = "Apply"
+
+[node name="TabContainer" type="TabContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.2
+anchor_right = 0.9
+anchor_bottom = 0.9
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 0
+
+[node name="Graphics" type="VBoxContainer" parent="Control/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="ResolutionOptions" type="OptionButton" parent="Control/TabContainer/Graphics"]
+layout_mode = 2
+
+[node name="FullscreenCheck" type="CheckButton" parent="Control/TabContainer/Graphics"]
+layout_mode = 2
+text = "Full-screen"
+
+[node name="VSyncCheck" type="CheckButton" parent="Control/TabContainer/Graphics"]
+layout_mode = 2
+text = "V-sync"
+
+[node name="Audio" type="VBoxContainer" parent="Control/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="VolumeLabel" type="Label" parent="Control/TabContainer/Audio"]
+layout_mode = 2
+text = "Volume"
+
+[node name="VolumeSlider" type="HSlider" parent="Control/TabContainer/Audio"]
+layout_mode = 2
+
+[node name="Controls" type="VBoxContainer" parent="Control/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="SensitivityLabel" type="Label" parent="Control/TabContainer/Controls"]
+layout_mode = 2
+text = "Sensitivity"
+
+[node name="SensitivitySlider" type="HSlider" parent="Control/TabContainer/Controls"]
+layout_mode = 2
+
+[node name="Version" type="Label" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.95
+anchor_right = 0.5
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 2
+text = "v0.1a"

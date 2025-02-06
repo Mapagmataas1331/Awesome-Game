@@ -26,9 +26,7 @@ grow_horizontal = 2
 grow_vertical = 2
 focus_neighbor_left = NodePath(".")
 focus_neighbor_top = NodePath(".")
-focus_neighbor_right = NodePath("../ApplyButton")
-focus_neighbor_bottom = NodePath("../TabContainer/Graphics")
-focus_next = NodePath("../TabContainer/Graphics")
+focus_neighbor_right = NodePath("../SaveButton")
 focus_previous = NodePath(".")
 text = "Back"
 
@@ -44,7 +42,7 @@ grow_vertical = 2
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="ApplyButton" type="Button" parent="Control"]
+[node name="SaveButton" type="Button" parent="Control"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.8
@@ -53,7 +51,11 @@ anchor_right = 0.9
 anchor_bottom = 0.1
 grow_horizontal = 2
 grow_vertical = 2
-text = "Apply"
+focus_neighbor_left = NodePath("../BackButton")
+focus_neighbor_top = NodePath(".")
+focus_neighbor_right = NodePath(".")
+focus_next = NodePath("../BackButton")
+text = "Save"
 
 [node name="TabContainer" type="TabContainer" parent="Control"]
 layout_mode = 1
@@ -64,11 +66,20 @@ anchor_right = 0.9
 anchor_bottom = 0.9
 grow_horizontal = 2
 grow_vertical = 2
+focus_neighbor_left = NodePath("../BackButton")
+focus_neighbor_top = NodePath("../SaveButton")
+focus_neighbor_right = NodePath("../SaveButton")
+focus_next = NodePath("../SaveButton")
+focus_previous = NodePath("../BackButton")
 current_tab = 0
 
 [node name="Graphics" type="VBoxContainer" parent="Control/TabContainer"]
 layout_mode = 2
 metadata/_tab_index = 0
+
+[node name="ResolutionLabel" type="Label" parent="Control/TabContainer/Graphics"]
+layout_mode = 2
+text = "Resolution"
 
 [node name="ResolutionOptions" type="OptionButton" parent="Control/TabContainer/Graphics"]
 layout_mode = 2
@@ -114,4 +125,4 @@ anchor_right = 0.5
 anchor_bottom = 0.95
 grow_horizontal = 2
 grow_vertical = 2
-text = "v0.1a"
+text = "v0.2a"

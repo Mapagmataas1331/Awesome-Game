@@ -7,7 +7,8 @@ extends Control
 @onready var resolution_options = $TabContainer/Graphics/ResolutionOptions
 
 func _ready():
-	_init_resolution_options()
+	if not OS.has_feature("web"):
+		_init_resolution_options()
 	load_current_settings()
 	
 	graphics_tab.find_child("FullscreenCheck").toggled.connect(_on_fullscreen_toggled)
@@ -15,7 +16,7 @@ func _ready():
 	audio_tab.find_child("VolumeSlider").value_changed.connect(_on_volume_changed)
 	controls_tab.find_child("SensitivitySlider").value_changed.connect(_on_sensitivity_changed)
 	$BackButton.pressed.connect(_on_back_pressed)
-	$ApplyButton.pressed.connect(_on_apply_pressed)
+	$SaveButton.pressed.connect(_on_save_pressed)
 
 func _init_resolution_options():
 	resolution_options.clear()
@@ -43,11 +44,12 @@ func load_current_settings():
 	graphics_tab.find_child("VSyncCheck").button_pressed = SettingsManager.vsync
 	
 	# Resolution
-	var current_label = "%dx%d" % [SettingsManager.resolution.x, SettingsManager.resolution.y]
-	for i in resolution_options.item_count:
-		if resolution_options.get_item_text(i) == current_label:
-			resolution_options.selected = i
-			break
+	if not OS.has_feature("web"):
+		var current_label = "%dx%d" % [SettingsManager.resolution.x, SettingsManager.resolution.y]
+		for i in resolution_options.item_count:
+			if resolution_options.get_item_text(i) == current_label:
+				resolution_options.selected = i
+				break
 	
 	# Audio
 	audio_tab.find_child("VolumeSlider").value = SettingsManager.master_volume
@@ -79,8 +81,9 @@ func _on_sensitivity_changed(value: float):
 
 func _on_back_pressed():
 	SettingsManager.load_settings()
+	SettingsManager.apply_settings()
 	get_tree().change_scene_to_file("res://assets/scenes/ui/main_menu.tscn")
 
-func _on_apply_pressed():
+func _on_save_pressed():
 	SettingsManager.save_settings()
 	get_tree().change_scene_to_file("res://assets/scenes/ui/main_menu.tscn")

@@ -58,26 +58,24 @@ func save_settings():
 
 func load_settings():
 	if OS.has_feature('web'):
-		var settings_json = JavaScriptBridge.eval("""
-			JSON.stringify({
-				master_volume: localStorage.getItem('master_volume'),
-				fullscreen: localStorage.getItem('fullscreen'),
-				vsync: localStorage.getItem('vsync'),
-				resolution_x: localStorage.getItem('resolution_x'),
-				resolution_y: localStorage.getItem('resolution_y'),
-				mouse_sensitivity: localStorage.getItem('mouse_sensitivity')
-			})
-		""")
-		
+		var settings_json = JavaScriptBridge.eval("localStorage.getItem('settings')")
 		var settings = JSON.parse_string(settings_json)
-		master_volume = settings.get("master_volume", 1.0) as float
-		fullscreen = bool(settings.get("fullscreen", "true") == "true")
-		vsync = bool(settings.get("vsync", "true") == "true")
-		resolution = Vector2i(
-			int(settings.get("resolution_x", 1152)),
-			int(settings.get("resolution_y", 648))
-		)
-		mouse_sensitivity = settings.get("mouse_sensitivity", 0.1) as float
+		if settings:
+			master_volume = settings.get("master_volume", 1.0)
+			fullscreen = settings.get("fullscreen", true)
+			vsync = settings.get("vsync", true)
+			resolution = Vector2i(
+				int(settings.get("resolution_x", 1152)),
+				int(settings.get("resolution_y", 648))
+			)
+			mouse_sensitivity = settings.get("mouse_sensitivity", 0.1)
+		else:
+			# Apply defaults if no settings found
+			master_volume = 1.0
+			fullscreen = true
+			vsync = true
+			resolution = Vector2i(1152, 648)
+			mouse_sensitivity = 0.1
 	else:
 		var config = ConfigFile.new()
 		if config.load("user://settings.cfg") == OK:
@@ -117,14 +115,13 @@ func apply_settings():
 	# Web-specific settings
 	else:
 		if fullscreen:
-			JavaScriptBridge.eval("document.documentElement.requestFullscreen()")
+			JavaScriptBridge.eval("if (!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement)) document.documentElement.requestFullscreen()")
 		else:
-			JavaScriptBridge.eval("document.exitFullscreen()")
+			JavaScriptBridge.eval("if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) document.exitFullscreen()")
 		
-		get_viewport().set_content_scale_mode(Window.CONTENT_SCALE_MODE_VIEWPORT)
-		get_viewport().size = resolution
+		# buggy
+		#get_viewport().set_content_scale_mode(Window.CONTENT_SCALE_MODE_VIEWPORT)
+		#get_viewport().size = resolution
 	
 	# Audio settings
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(master_volume))
-	
-	print("Settings applied - Resolution: ", resolution)

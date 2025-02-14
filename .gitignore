@@ -1,5 +1,28 @@
-# Godot 4+ specific ignores
-.godot/
-/android/
-.editorconfig
-*.uid
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Build directories (if you build binaries into these folders)
+bin/
+pkg/
+
+# Go workspace file (introduced in Go 1.18+)
+go.work
+go.work.sum
+
+# Dependency directories (if using Go modules, these can be omitted)
+vendor/
+
+# IDE or editor specific files
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://bodt7akw3tq1d"]
+
+[sub_resource type="BoxMesh" id="1"]
+size = Vector3(20, 1, 20)
+
+[node name="World" type="Node3D"]
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("1")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 5, 5)
+
+[node name="Players" type="Node3D" parent="."]

@@ -1,8 +1,8 @@
-[gd_scene format=3 uid="uid://33un2fe6m3eb"]
+[gd_scene format=3 uid="uid://c6f78hmemwbv"]
 
 [node name="Base" type="Node3D"]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="Environment" type="WorldEnvironment" parent="."]
 
 [node name="Players" type="Node3D" parent="."]
 

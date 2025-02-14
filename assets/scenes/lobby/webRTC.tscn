@@ -1,25 +1,47 @@
-[gd_scene load_steps=3 format=3 uid="uid://dehjx0puejrwr"]
+[gd_scene load_steps=2 format=3 uid="uid://dehjx0puejrwr"]
 
-[ext_resource type="PackedScene" uid="uid://33un2fe6m3eb" path="res://assets/scenes/lobby/base.tscn" id="1_etbii"]
-[ext_resource type="Script" uid="uid://dojhyhdybct80" path="res://assets/scripts/lobby/webRTC.gd" id="2_jquc5"]
+[ext_resource type="Script" uid="uid://dojhyhdybct80" path="res://assets/scripts/lobby/webRTC.gd" id="1_etbii"]
 
-[node name="Base" instance=ExtResource("1_etbii")]
-script = ExtResource("2_jquc5")
+[node name="WebRTC" type="Node3D"]
+script = ExtResource("1_etbii")
 
-[node name="WebRTCUI" type="VBoxContainer" parent="UI" index="0"]
-anchors_preset = 9
-anchor_bottom = 1.0
-offset_right = 8.0
-grow_vertical = 2
+[node name="Environment" type="WorldEnvironment" parent="."]
 
-[node name="LobbyCode" type="Label" parent="UI/WebRTCUI" index="0"]
+[node name="Players" type="Node3D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="WebRTCUI" type="VBoxContainer" parent="UI"]
+offset_right = 72.0
+offset_bottom = 194.0
+
+[node name="LobbyTitle" type="Label" parent="UI/WebRTCUI"]
+layout_mode = 2
+text = "Tittle"
+
+[node name="LobbyCode" type="Label" parent="UI/WebRTCUI"]
 layout_mode = 2
 text = "XXXXXX"
 
-[node name="JoinCode" type="LineEdit" parent="UI/WebRTCUI" index="1"]
+[node name="LineEdit" type="LineEdit" parent="UI/WebRTCUI"]
 layout_mode = 2
-text = "XXXXXX"
+placeholder_text = "Code"
 
-[node name="JoinButton" type="Button" parent="UI/WebRTCUI" index="2"]
+[node name="CreateButton" type="Button" parent="UI/WebRTCUI"]
 layout_mode = 2
-text = "Join"
+text = "Create"
+
+[node name="ConnectButton" type="Button" parent="UI/WebRTCUI"]
+layout_mode = 2
+text = "Connect"
+
+[node name="PlayerList" type="VBoxContainer" parent="UI/WebRTCUI"]
+layout_mode = 2
+
+[node name="ReadyButton" type="Button" parent="UI/WebRTCUI"]
+layout_mode = 2
+text = "Ready"
+
+[node name="LeaveButton" type="Button" parent="UI/WebRTCUI"]
+layout_mode = 2
+text = "Leave"

@@ -7,8 +7,7 @@ extends Control
 @onready var resolution_options = $TabContainer/Graphics/ResolutionOptions
 
 func _ready():
-	if not OS.has_feature("web"):
-		_init_resolution_options()
+	_init_resolution_options()
 	load_current_settings()
 	
 	graphics_tab.find_child("FullscreenCheck").toggled.connect(_on_fullscreen_toggled)
@@ -21,22 +20,26 @@ func _ready():
 func _init_resolution_options():
 	resolution_options.clear()
 	
-	# Add presets
-	for label in SettingsManager.resolution_presets:
-		resolution_options.add_item(label)
+	if OS.has_feature("web"):
+		resolution_options.add_item("not applicable");
 	
-	var current_label = "%dx%d" % [SettingsManager.resolution.x, SettingsManager.resolution.y]
-	var found = false
-	
-	for i in resolution_options.item_count:
-		if resolution_options.get_item_text(i) == current_label:
-			found = true
-			break
-	
-	if not found:
-		resolution_options.add_item(current_label)
-	
-	resolution_options.item_selected.connect(_on_resolution_selected)
+	else:
+		# Add presets
+		for label in SettingsManager.resolution_presets:
+			resolution_options.add_item(label)
+		
+		var current_label = "%dx%d" % [SettingsManager.resolution.x, SettingsManager.resolution.y]
+		var found = false
+		
+		for i in resolution_options.item_count:
+			if resolution_options.get_item_text(i) == current_label:
+				found = true
+				break
+		
+		if not found:
+			resolution_options.add_item(current_label)
+		
+		resolution_options.item_selected.connect(_on_resolution_selected)
 
 func load_current_settings():
 	# Graphics

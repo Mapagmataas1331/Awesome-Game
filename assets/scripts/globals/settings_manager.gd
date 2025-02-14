@@ -17,9 +17,9 @@ var resolution_presets = {
 
 # Default settings
 var master_volume: float = 1.0
-var fullscreen: bool = true
+var fullscreen: bool = false
 var vsync: bool = true
-var resolution: Vector2i = Vector2i(1152, 648)
+var resolution: Vector2i = Vector2i(1024, 576)
 var mouse_sensitivity: float = 0.1
 
 func _ready():
@@ -118,10 +118,6 @@ func apply_settings():
 			JavaScriptBridge.eval("if (!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement)) document.documentElement.requestFullscreen()")
 		else:
 			JavaScriptBridge.eval("if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) document.exitFullscreen()")
-		
-		# buggy
-		#get_viewport().set_content_scale_mode(Window.CONTENT_SCALE_MODE_VIEWPORT)
-		#get_viewport().size = resolution
 	
 	# Audio settings
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(master_volume))

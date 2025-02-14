@@ -49,7 +49,7 @@ func main() {
 		port = "8080"
 	}
 
-	http.HandleFunc("/ws", handleWebSocket)
+	http.HandleFunc("/", handleWebSocket)
 
 	log.Printf("WebSocket signaling server running on port %s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {

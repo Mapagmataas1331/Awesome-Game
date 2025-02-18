@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://b5672ujqmp3bl"]
+[gd_scene load_steps=3 format=3 uid="uid://b5672ujqmp3bl"]
 
-[sub_resource type="BoxMesh" id="1"]
+[ext_resource type="Script" path="res://assets/scripts/game/player.gd" id="1_wolb4"]
 
-[node name="Player" type="Node3D"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_qpbpm"]
 
-[node name="Box" type="MeshInstance3D" parent="."]
-mesh = SubResource("1")
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_wolb4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_qpbpm")

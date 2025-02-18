@@ -21,6 +21,7 @@ var fullscreen: bool = false
 var vsync: bool = true
 var resolution: Vector2i = Vector2i(1024, 576)
 var mouse_sensitivity: float = 0.1
+var player_name: String = "Player"
 
 func _ready():
 	load_settings()
@@ -35,7 +36,8 @@ func save_settings():
 				vsync: %s,
 				resolution_x: %s,
 				resolution_y: %s,
-				mouse_sensitivity: %s
+				mouse_sensitivity: %s,
+				player_name: "%s"
 			}))
 		""" % [
 			str(master_volume), 
@@ -43,7 +45,8 @@ func save_settings():
 			str(vsync).to_lower(),
 			str(resolution.x),
 			str(resolution.y),
-			str(mouse_sensitivity)
+			str(mouse_sensitivity),
+			str(player_name)
 		])
 	else:
 		var config = ConfigFile.new()
@@ -52,6 +55,7 @@ func save_settings():
 		config.set_value("graphics", "vsync", vsync)
 		config.set_value("graphics", "resolution", resolution)
 		config.set_value("controls", "mouse_sensitivity", mouse_sensitivity)
+		config.set_value("game", "player_name", player_name)
 		config.save("user://settings.cfg")
 	
 	apply_settings()
@@ -69,6 +73,7 @@ func load_settings():
 				int(settings.get("resolution_y", 648))
 			)
 			mouse_sensitivity = settings.get("mouse_sensitivity", 0.1)
+			player_name = settings.get("player_name", "Player")
 		else:
 			# Apply defaults if no settings found
 			master_volume = 1.0
@@ -76,6 +81,7 @@ func load_settings():
 			vsync = true
 			resolution = Vector2i(1152, 648)
 			mouse_sensitivity = 0.1
+			player_name = "Player"
 	else:
 		var config = ConfigFile.new()
 		if config.load("user://settings.cfg") == OK:
@@ -84,6 +90,7 @@ func load_settings():
 			vsync = config.get_value("graphics", "vsync", true)
 			resolution = config.get_value("graphics", "resolution", Vector2i(1152, 648))
 			mouse_sensitivity = config.get_value("controls", "mouse_sensitivity", 0.1)
+			player_name = config.get_value("game", "player_name", "Player")
 	
 	# Clamp resolution to valid values
 	resolution.x = clamp(resolution.x, 640, 3840)

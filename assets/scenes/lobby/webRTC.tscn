@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dehjx0puejrwr"]
 
-[ext_resource type="Script" uid="uid://dojhyhdybct80" path="res://assets/scripts/lobby/webRTC.gd" id="1_etbii"]
+[ext_resource type="Script" path="res://assets/scripts/lobby/webRTC.gd" id="1_etbii"]
 
 [node name="WebRTC" type="Node3D"]
 script = ExtResource("1_etbii")
@@ -15,6 +15,18 @@ script = ExtResource("1_etbii")
 offset_right = 72.0
 offset_bottom = 194.0
 
+[node name="NameInput" type="LineEdit" parent="UI/WebRTCUI"]
+layout_mode = 2
+placeholder_text = "Name"
+
+[node name="CodeInput" type="LineEdit" parent="UI/WebRTCUI"]
+layout_mode = 2
+placeholder_text = "Code"
+
+[node name="ConnectButton" type="Button" parent="UI/WebRTCUI"]
+layout_mode = 2
+text = "Connect"
+
 [node name="LobbyTitle" type="Label" parent="UI/WebRTCUI"]
 layout_mode = 2
 text = "Tittle"
@@ -22,18 +34,6 @@ text = "Tittle"
 [node name="LobbyCode" type="Label" parent="UI/WebRTCUI"]
 layout_mode = 2
 text = "XXXXXX"
-
-[node name="LineEdit" type="LineEdit" parent="UI/WebRTCUI"]
-layout_mode = 2
-placeholder_text = "Code"
-
-[node name="CreateButton" type="Button" parent="UI/WebRTCUI"]
-layout_mode = 2
-text = "Create"
-
-[node name="ConnectButton" type="Button" parent="UI/WebRTCUI"]
-layout_mode = 2
-text = "Connect"
 
 [node name="PlayerList" type="VBoxContainer" parent="UI/WebRTCUI"]
 layout_mode = 2

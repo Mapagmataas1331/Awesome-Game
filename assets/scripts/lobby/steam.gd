@@ -8,12 +8,16 @@ var lobby_id: int = 0
 var steam_initialized := false
 
 func _ready():
-	if Steam.steamInit().status == Steam.RESULT_OK:
+	var initialize_response: Dictionary = Steam.steamInitEx( true, 480 )
+	print("Steam successfully initialize with status: %s, Ex %s" % [Steam.steamInit().status, initialize_response.status])
+	if Steam.steamInit().status == Steam.RESULT_OK && initialize_response.status == 0:
 		steam_initialized = true
 		Steam.lobby_joined.connect(_on_lobby_joined)
 		Steam.p2p_session_request.connect(_on_p2p_request)
 		Steam.p2p_session_connect_fail.connect(_on_p2p_fail)
 		Steam.lobby_chat_update.connect(_on_lobby_chat_update)
+	else:
+		push_error("Steam Failed to initialize with status: %s, Ex %s" % [Steam.steamInit().status, initialize_response.status])
 	
 	super._ready()
 	init_ui()
@@ -37,7 +41,7 @@ func create_lobby():
 	else:
 		push_error("Steam not initialized!")
 
-func _on_lobby_joined(new_lobby_id: int):
+func _on_lobby_joined(new_lobby_id: int, permissions: int, locked: bool, response: int):
 	lobby_id = new_lobby_id
 	Steam.setLobbyData(lobby_id, "name", DEFAULT_LOBBY_NAME)
 	Steam.setLobbyJoinable(lobby_id, true)
@@ -55,15 +59,17 @@ func _add_steam_peer(member_id: int):
 		var new_player = preload("res://assets/scenes/game/player.tscn").instantiate()
 		$Players.add_child(new_player)
 		players[member_id] = new_player
+		# Initialize with default position
+		new_player.global_transform.origin = Vector3(randf_range(-2,2), 0, randf_range(-2,2))
 		GameManager.register_player(member_id, {
 			"name": Steam.getFriendPersonaName(member_id),
-			"position": Vector3.ZERO,
+			"position": new_player.global_transform.origin,
 			"ready": false
 		})
 
 func update_player_list():
 	var members = []
-	for i in Steam.getNumLobbyMembers(lobby_id):
+	for i in range(Steam.getNumLobbyMembers(lobby_id)):
 		var steam_id = Steam.getLobbyMemberByIndex(lobby_id, i)
 		members.append({
 			"id": steam_id,
@@ -72,7 +78,8 @@ func update_player_list():
 		})
 	
 	var list_node = $UI/SteamUI/PlayerList
-	list_node.clear()
+	for child in list_node.get_children():
+		child.queue_free()
 	for member in members:
 		var label = Label.new()
 		label.text = "%s [%s]" % [member.name, "READY" if member.ready else "NOT READY"]
@@ -110,23 +117,22 @@ func send_player_state():
 	var json_state = JSON.stringify(state)
 	for member_id in players:
 		if member_id != GameManager.local_player_id:
-			Steam.sendP2PPacket(member_id, json_state.to_utf8(), Steam.P2P_SEND_RELIABLE)
+			Steam.sendP2PPacket(member_id, json_state.to_utf8_buffer(), Steam.P2P_SEND_RELIABLE)
 
 func _process(delta):
-	var packet_size = Steam.getAvailableP2PPacketSize()
-	while packet_size > 0:
-		var packet = Steam.readP2PPacket(packet_size)
-		if packet.size() > 0:
-			handle_packet(packet.steam_id, packet.data.get_string_from_utf8())
-		packet_size = Steam.getAvailableP2PPacketSize()
+	if steam_initialized:
+		Steam.run_callbacks()
 
 func handle_packet(steam_id: int, data: String):
 	var json = JSON.new()
 	if json.parse(data) == OK:
 		var state = json.data
 		if players.has(steam_id):
-			players[steam_id].global_transform.origin = Vector3(state.position.x, state.position.y, state.position.z)
-			players[steam_id].rotation = Vector3(state.rotation.x, state.rotation.y, state.rotation.z)
+			# Update player state through interpolation
+			players[steam_id].update_state(
+				Vector3(state.position.x, state.position.y, state.position.z),
+				Vector3(state.rotation.x, state.rotation.y, state.rotation.z)
+			)
 			
 			if state.has("ready"):
 				GameManager.players[steam_id].ready = state.ready

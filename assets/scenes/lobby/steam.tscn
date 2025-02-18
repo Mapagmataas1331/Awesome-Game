@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cvxy2goxhh6fi"]
 
-[ext_resource type="Script" uid="uid://bw2cqkf52q4fa" path="res://assets/scripts/lobby/steam.gd" id="1_3mgqa"]
+[ext_resource type="Script" path="res://assets/scripts/lobby/steam.gd" id="1_3mgqa"]
 
 [node name="Steam" type="Node3D"]
 script = ExtResource("1_3mgqa")

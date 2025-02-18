@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="Awesome Game"
-run/main_scene="uid://bjp4w5jh0cxdk"
-config/features=PackedStringArray("4.4", "GL Compatibility")
+run/main_scene="res://assets/scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
 boot_splash/show_image=false
 config/icon="res://icon.svg"
 
@@ -20,6 +20,10 @@ config/icon="res://icon.svg"
 
 SettingsManager="*res://assets/scripts/globals/settings_manager.gd"
 GameManager="*res://assets/scripts/globals/game_manager.gd"
+
+[debug]
+
+file_logging/enable_file_logging=true
 
 [dotnet]
 

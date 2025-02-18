@@ -41,6 +41,7 @@ func leave_lobby():
 			Steam.leaveLobby(lobby.lobby_id)
 		elif lobby is WebRTCLobby:
 			lobby.peer.close()
+		await get_tree().process_frame
 		lobby.queue_free()
 		lobby = null
 	players.clear()

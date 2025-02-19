@@ -12,4 +12,4 @@ func _ready():
 		audio_player.queue_free()
 
 func _on_start_pressed():
-	get_tree().change_scene_to_file("res://assets/scenes/ui/main_menu.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/ui/main_menu.tscn")

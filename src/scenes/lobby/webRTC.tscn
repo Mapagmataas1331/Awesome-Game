@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dehjx0puejrwr"]
 
-[ext_resource type="Script" path="res://assets/scripts/lobby/webRTC.gd" id="1_etbii"]
+[ext_resource type="Script" path="res://src/scripts/lobby/webRTC.gd" id="1_etbii"]
 
 [node name="WebRTC" type="Node3D"]
 script = ExtResource("1_etbii")
@@ -45,3 +45,6 @@ text = "Ready"
 [node name="LeaveButton" type="Button" parent="UI/WebRTCUI"]
 layout_mode = 2
 text = "Leave"
+
+[node name="ErrorLabel" type="Label" parent="UI/WebRTCUI"]
+layout_mode = 2

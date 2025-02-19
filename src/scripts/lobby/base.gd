@@ -24,7 +24,7 @@ func _ready() -> void:
 # Creates the local player and registers it with the GameManager.
 func create_local_player() -> void:
 	# Updated player scene path (using assets/scenes/game/player.tscn)
-	var player_scene = preload("res://assets/scenes/game/player.tscn")
+	var player_scene = preload("res://src/scenes/game/player.tscn")
 	local_player = player_scene.instantiate()
 	# In the lobby scene, the Players node is assumed to be a direct child of the root.
 	get_node("Players").add_child(local_player)

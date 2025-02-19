@@ -11,15 +11,15 @@ config_version=5
 [application]
 
 config/name="Awesome Game"
-run/main_scene="res://assets/scenes/main.tscn"
+run/main_scene="res://src/scenes/main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 boot_splash/show_image=false
 config/icon="res://icon.svg"
 
 [autoload]
 
-SettingsManager="*res://assets/scripts/globals/settings_manager.gd"
-GameManager="*res://assets/scripts/globals/game_manager.gd"
+GameManager="*res://src/scripts/globals/game_manager.gd"
+SettingsManager="*res://src/scripts/globals/settings_manager.gd"
 
 [debug]
 

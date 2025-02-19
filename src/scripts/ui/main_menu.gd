@@ -11,13 +11,13 @@ func _ready():
 	$VBoxContainer/ExitButton.connect("pressed", _on_exit_pressed)
 
 func _on_steam_pressed():
-	get_tree().change_scene_to_file("res://assets/scenes/lobby/steam.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/lobby/steam.tscn")
 
 func _on_webrtc_pressed():
-	get_tree().change_scene_to_file("res://assets/scenes/lobby/webRTC.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/lobby/webRTC.tscn")
 
 func _on_settings_pressed():
-	get_tree().change_scene_to_file("res://assets/scenes/ui/settings_menu.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/ui/settings_menu.tscn")
 
 func _on_exit_pressed():
 	if not OS.has_feature('web'):

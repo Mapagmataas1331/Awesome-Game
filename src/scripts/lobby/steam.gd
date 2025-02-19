@@ -56,7 +56,7 @@ func _on_lobby_joined(new_lobby_id: int, permissions: int, locked: bool, respons
 
 func _add_steam_peer(member_id: int):
 	if not players.has(member_id):
-		var new_player = preload("res://assets/scenes/game/player.tscn").instantiate()
+		var new_player = preload("res://src/scenes/game/player.tscn").instantiate()
 		$Players.add_child(new_player)
 		players[member_id] = new_player
 		# Initialize with default position
@@ -141,4 +141,4 @@ func handle_packet(steam_id: int, data: String):
 func _on_leave_pressed():
 	if steam_initialized && lobby_id != 0:
 		Steam.leaveLobby(lobby_id)
-	get_tree().change_scene_to_file("res://assets/scenes/ui/main_menu.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/ui/main_menu.tscn")

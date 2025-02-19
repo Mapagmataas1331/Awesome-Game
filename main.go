@@ -50,12 +50,20 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		if typ, ok := data["type"].(string); ok && typ == "register" {
-			if code, ok := data["code"].(string); ok {
+		if typ, ok := data["type"].(string); ok {
+			switch typ {
+			case "register":
+				if code, ok := data["code"].(string); ok {
+					mu.Lock()
+					clientLobby[ws] = code
+					mu.Unlock()
+					log.Printf("Client registered in lobby: %s\n", code)
+				}
+			case "unregister":
 				mu.Lock()
-				clientLobby[ws] = code
+				delete(clientLobby, ws)
 				mu.Unlock()
-				log.Printf("Client registered in lobby: %s\n", code)
+				log.Printf("Client unregistered from lobby\n")
 			}
 		}
 

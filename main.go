@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Lobby represents a game lobby
 type Lobby struct {
 	Code      string
 	CreatedAt time.Time
@@ -19,12 +18,9 @@ type Lobby struct {
 }
 
 var (
-	// Upgrader upgrades HTTP connections to websockets.
 	upgrader = websocket.Upgrader{
-		// For simplicity, allow all origins. You might tighten this in production.
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-	// lobbies stores active lobbies by code.
 	lobbies = sync.Map{}
 )
 
@@ -52,16 +48,12 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			log.Printf("[INFO] Read error (closing connection): %v", err)
 			break
 		}
-
 		var data map[string]interface{}
 		if err := json.Unmarshal(msg, &data); err != nil {
 			log.Printf("[ERROR] Unmarshal error: %v", err)
 			continue
 		}
-
-		// Print received message info
 		log.Printf("[INFO] Received message: %v", data)
-
 		switch data["type"] {
 		case "register":
 			handleRegistration(ws, data)
@@ -69,6 +61,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			handleJoin(ws, data)
 		case "unregister":
 			handleUnregistration(data)
+		case "player_update":
+			handlePlayerUpdate(ws, data)
 		default:
 			log.Printf("[WARN] Unknown message type: %v", data["type"])
 		}
@@ -81,7 +75,6 @@ func handleRegistration(ws *websocket.Conn, data map[string]interface{}) {
 		log.Println("[ERROR] Invalid or missing code in registration")
 		return
 	}
-
 	lobby := &Lobby{
 		Code:      code,
 		CreatedAt: time.Now(),
@@ -90,18 +83,17 @@ func handleRegistration(ws *websocket.Conn, data map[string]interface{}) {
 	lobbies.Store(code, lobby)
 	log.Printf("[INFO] Lobby registered: %s at %s", code, lobby.CreatedAt.Format(time.RFC3339))
 
-	// Send confirmation back to the client
 	resp := map[string]interface{}{
 		"type": "code_registered",
 		"code": code,
 	}
 	respBytes, err := json.Marshal(resp)
 	if err != nil {
-		log.Printf("[ERROR] Error marshalling code_registered response: %v", err)
+		log.Printf("[ERROR] Error marshalling response: %v", err)
 		return
 	}
 	if err := ws.WriteMessage(websocket.TextMessage, respBytes); err != nil {
-		log.Printf("[ERROR] Failed to send code_registered message: %v", err)
+		log.Printf("[ERROR] Failed to send confirmation: %v", err)
 		return
 	}
 	log.Printf("[INFO] Sent code_registered confirmation for lobby %s", code)
@@ -113,7 +105,6 @@ func handleJoin(ws *websocket.Conn, data map[string]interface{}) {
 		log.Println("[ERROR] Invalid or missing code in join")
 		return
 	}
-
 	lobbyInterface, ok := lobbies.Load(code)
 	if !ok {
 		log.Printf("[WARN] Lobby not found for code: %s", code)
@@ -121,7 +112,7 @@ func handleJoin(ws *websocket.Conn, data map[string]interface{}) {
 	}
 	lobby := lobbyInterface.(*Lobby)
 	lobby.Clients = append(lobby.Clients, ws)
-	log.Printf("[INFO] Client joined lobby %s; total clients now: %d", code, len(lobby.Clients))
+	log.Printf("[INFO] Client joined lobby %s; total clients: %d", code, len(lobby.Clients))
 	broadcastToLobby(code, data)
 }
 
@@ -133,6 +124,16 @@ func handleUnregistration(data map[string]interface{}) {
 	}
 	lobbies.Delete(code)
 	log.Printf("[INFO] Lobby unregistered: %s", code)
+}
+
+func handlePlayerUpdate(ws *websocket.Conn, data map[string]interface{}) {
+	code, ok := data["code"].(string)
+	if !ok || code == "" {
+		log.Println("[ERROR] player_update missing code")
+		return
+	}
+	log.Printf("[INFO] Received player_update for lobby %s: %v", code, data)
+	broadcastToLobby(code, data)
 }
 
 func getPort() string {

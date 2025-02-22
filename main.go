@@ -74,18 +74,26 @@ func checkOrigin(r *http.Request) bool {
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[DEBUG] Incoming connection to %s", r.URL.Path)
+	log.Printf("[DEBUG] Headers: %+v", r.Header)
+
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("[ERROR] Upgrade error: %v", err)
+		if websocket.IsUnexpectedCloseError(err) {
+			log.Printf("[ERROR] Upgrade error: %v", err)
+		} else {
+			log.Printf("[WARN] Non-WebSocket request from %s: %v", r.RemoteAddr, err)
+		}
 		return
 	}
 
-	log.Printf("[INFO] New connection from %s", r.RemoteAddr)
+	log.Printf("[INFO] New connection from %s (%s)", r.RemoteAddr, r.UserAgent())
 	client := &Client{
 		Conn: ws,
 		ID:   generateClientID(),
 	}
 	clientMap.Store(ws, client)
+	log.Printf("[CONNECT] New client %s connected", client.ID)
 
 	go startPingRoutine(client)
 
@@ -159,6 +167,7 @@ func handleApplicationPing(client *Client) {
 	sendJSON(client, map[string]string{
 		"type": PongMessageType,
 	})
+	log.Printf("[PING] Received from %s", client.ID)
 }
 
 func handleControlMessage(client *Client, rawMsg []byte) {
@@ -182,14 +191,15 @@ func handleControlMessage(client *Client, rawMsg []byte) {
 }
 
 func handleGameMessage(sender *Client, rawMsg []byte) {
+	log.Printf("[MSG] Received %d bytes from %s in lobby %s", len(rawMsg), sender.ID, sender.LobbyCode)
 	if sender.LobbyCode == "" {
-		log.Printf("[WARN] Client %s not in any lobby", sender.ID)
+		log.Printf("[WARN] Client %s sent game message without lobby", sender.ID)
 		return
 	}
 
 	lobbyInterface, ok := lobbies.Load(sender.LobbyCode)
 	if !ok {
-		log.Printf("[WARN] Lobby not found for client %s", sender.ID)
+		log.Printf("[WARN] Lobby %s not found for client %s", sender.LobbyCode, sender.ID)
 		return
 	}
 
@@ -197,12 +207,24 @@ func handleGameMessage(sender *Client, rawMsg []byte) {
 	lobby.mu.RLock()
 	defer lobby.mu.RUnlock()
 
+	var baseMsg struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(rawMsg, &baseMsg); err == nil {
+		log.Printf("[RELAY] %s %s -> %d peers", baseMsg.Type, sender.ID, len(lobby.Clients)-1)
+	} else {
+		log.Printf("[RELAY] Unknown message from %s", sender.ID)
+	}
+
 	broadcastMessage(lobby, sender.ID, rawMsg)
 }
 
 func handleLobbyRegistration(client *Client, code string) {
 	if code == "" {
 		code = generateLobbyCode()
+		log.Printf("[INFO] Generated new code: %s for %s", code, client.ID)
+	} else {
+		log.Printf("[INFO] Received code: %s from %s", code, client.ID)
 	}
 
 	newLobby := &Lobby{
@@ -227,17 +249,22 @@ func handleLobbyRegistration(client *Client, code string) {
 }
 
 func handleLobbyJoin(client *Client, code string) {
+	log.Printf("[INFO] Client %s attempting to join %s", client.ID, code)
 	lobbyInterface, ok := lobbies.Load(code)
 	if !ok {
+		log.Printf("[WARN] Lobby %s not found for client %s", code, client.ID)
 		sendError(client, "Lobby not found")
 		return
 	}
 
 	lobby := lobbyInterface.(*Lobby)
+	log.Printf("[INFO] Found lobby %s (created %s ago) with %d players",
+		code, time.Since(lobby.CreatedAt).Round(time.Second), len(lobby.Clients))
 	lobby.mu.Lock()
 	defer lobby.mu.Unlock()
 
 	if _, exists := lobby.Clients[client.ID]; exists {
+		log.Printf("[WARN] Client %s already in lobby %s", client.ID, code)
 		sendError(client, "Already in lobby")
 		return
 	}
@@ -247,47 +274,73 @@ func handleLobbyJoin(client *Client, code string) {
 
 	broadcastMessage(lobby, client.ID, createSystemMessage("player_joined", client.ID))
 
+	members := getClientIDs(lobby)
+	log.Printf("[INFO] %s joined %s. Members: %v", client.ID, code, members)
+
 	sendJSON(client, map[string]interface{}{
 		"type":    "lobby_joined",
 		"code":    code,
-		"members": getClientIDs(lobby),
+		"members": members,
 	})
-	log.Printf("[INFO] %s joined lobby %s", client.ID, code)
 }
 
 func handleLobbyUnregistration(client *Client, code string) {
+	log.Printf("[INFO] Client %s attempting to unregister %s", client.ID, code)
 	lobbyInterface, ok := lobbies.Load(code)
 	if !ok {
+		log.Printf("[WARN] Lobby %s not found for client %s", code, client.ID)
 		sendError(client, "Lobby not found")
 		return
 	}
+
+	log.Printf("[INFO] Found lobby %s (created %s ago) with %d players",
+		code, time.Since(lobbyInterface.(*Lobby).CreatedAt).Round(time.Second), len(lobbyInterface.(*Lobby).Clients))
 
 	lobby := lobbyInterface.(*Lobby)
 	lobby.mu.Lock()
 	defer lobby.mu.Unlock()
 
 	if lobby.HostID != client.ID {
+		log.Printf("[WARN] Client %s not host for lobby %s", client.ID, code)
 		sendError(client, "Only host can unregister lobby")
 		return
 	}
 
 	closeLobby(lobby)
+
 	log.Printf("[INFO] Lobby %s closed by host %s", code, client.ID)
 }
 
 func broadcastMessage(lobby *Lobby, senderID string, msg []byte) {
+	log.Printf("[BROADCAST] Lobby %s: Sending message from %s to %d peers",
+		lobby.Code, senderID, len(lobby.Clients)-1)
+	sentCount := 0
+	start := time.Now()
+
 	for _, client := range lobby.Clients {
 		if client.ID == senderID {
 			continue
 		}
 		if err := writeWithTimeout(client.Conn, msg); err != nil {
-			log.Printf("[WARN] Failed to send message to %s: %v", client.ID, err)
+			log.Printf("[ERROR] Failed to send to %s: %v", client.ID, err)
+		} else {
+			sentCount++
 		}
 	}
+
+	log.Printf("[BROADCAST] Completed in %v. Sent to %d/%d peers",
+		time.Since(start), sentCount, len(lobby.Clients)-1)
 }
 
 func cleanupConnection(client *Client) {
+	start := time.Now()
+	defer func() {
+		log.Printf("[DISCONNECT] Client %s cleanup completed in %v",
+			client.ID, time.Since(start))
+	}()
+
 	if client.LobbyCode != "" {
+		log.Printf("[DISCONNECT] Client %s leaving lobby %s", client.ID, client.LobbyCode)
 		lobbyInterface, ok := lobbies.Load(client.LobbyCode)
 		if ok {
 			lobby := lobbyInterface.(*Lobby)
@@ -295,21 +348,29 @@ func cleanupConnection(client *Client) {
 			defer lobby.mu.Unlock()
 
 			delete(lobby.Clients, client.ID)
+			log.Printf("[LOBBY] Removed %s from %s. Remaining: %d",
+				client.ID, lobby.Code, len(lobby.Clients))
+
 			broadcastMessage(lobby, client.ID, createSystemMessage("player_left", client.ID))
 
 			if len(lobby.Clients) == 0 {
+				log.Printf("[LOBBY] Deleting empty lobby %s", lobby.Code)
 				lobbies.Delete(client.LobbyCode)
 			} else if lobby.HostID == client.ID {
-				for _, newHost := range lobby.Clients {
-					lobby.HostID = newHost.ID
+				newHost := ""
+				for _, nh := range lobby.Clients {
+					newHost = nh.ID
 					break
 				}
+				log.Printf("[HOST] Reassigning host from %s to %s in %s",
+					client.ID, newHost, lobby.Code)
+				lobby.HostID = newHost
 				broadcastMessage(lobby, "", createSystemMessage("new_host", lobby.HostID))
 			}
 		}
 	}
 	clientMap.Delete(client.Conn)
-	log.Printf("[INFO] Connection closed for %s", client.ID)
+	log.Printf("[DISCONNECT] Client %s fully removed", client.ID)
 }
 
 func cleanupExpiredLobbies() {
@@ -326,9 +387,6 @@ func cleanupExpiredLobbies() {
 }
 
 func closeLobby(lobby *Lobby) {
-	lobby.mu.Lock()
-	defer lobby.mu.Unlock()
-
 	for _, client := range lobby.Clients {
 		client.Conn.WriteControl(
 			websocket.CloseMessage,
@@ -341,8 +399,17 @@ func closeLobby(lobby *Lobby) {
 }
 
 func writeWithTimeout(conn *websocket.Conn, msg []byte) error {
-	conn.SetWriteDeadline(time.Now().Add(WriteWait))
-	return conn.WriteMessage(websocket.TextMessage, msg)
+	start := time.Now()
+	err := conn.WriteMessage(websocket.TextMessage, msg)
+
+	if err != nil {
+		log.Printf("[WS_ERROR] Write to %s failed after %v: %v",
+			conn.RemoteAddr(), time.Since(start), err)
+	} else {
+		log.Printf("[WS_DEBUG] Wrote %d bytes to %s", len(msg), conn.RemoteAddr())
+	}
+
+	return err
 }
 
 func createSystemMessage(msgType, content string) []byte {
@@ -406,5 +473,5 @@ func getPort() string {
 	if port := os.Getenv("PORT"); port != "" {
 		return port
 	}
-	return "8080"
+	return "80"
 }

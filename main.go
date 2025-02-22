@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -19,6 +20,11 @@ const (
 	PongWait        = 60 * time.Second
 	PingPeriod      = (PongWait * 9) / 10
 	MaxMessageSize  = 1024
+	AllowedOrigin   = "yourgame.com"
+	LobbyCodeLength = 6
+	ClientIDLength  = 12
+	PingMessageType = "ping"
+	PongMessageType = "pong"
 )
 
 type Client struct {
@@ -30,7 +36,7 @@ type Client struct {
 type Lobby struct {
 	Code      string
 	CreatedAt time.Time
-	Clients   map[string]*Client // ID -> Client
+	Clients   map[string]*Client
 	HostID    string
 	mu        sync.RWMutex
 }
@@ -42,7 +48,7 @@ var (
 		CheckOrigin:     checkOrigin,
 	}
 	lobbies   = sync.Map{}
-	clientMap = sync.Map{} // websocket.Conn -> Client
+	clientMap = sync.Map{}
 )
 
 func main() {
@@ -61,9 +67,10 @@ func main() {
 func checkOrigin(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
 	if origin == "" {
-		return true // Allow non-browser clients
+		return true
 	}
-	return origin == AllowedOrigin
+	// return origin == AllowedOrigin
+	return true
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -76,9 +83,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[INFO] New connection from %s", r.RemoteAddr)
 	client := &Client{
 		Conn: ws,
-		ID:   generateClientID(r),
+		ID:   generateClientID(),
 	}
 	clientMap.Store(ws, client)
+
+	go startPingRoutine(client)
 
 	defer func() {
 		cleanupConnection(client)
@@ -119,12 +128,37 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			handleControlMessage(client, msg)
 		case "offer", "answer", "ice", "chat":
 			handleGameMessage(client, msg)
-		case "ping":
-			handlePing(client)
+		case PingMessageType:
+			handleApplicationPing(client)
 		default:
 			log.Printf("[WARN] Unknown message type: %s", baseMsg.Type)
 		}
 	}
+}
+
+func startPingRoutine(client *Client) {
+	ticker := time.NewTicker(PingPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := client.Conn.WriteControl(
+				websocket.PingMessage,
+				[]byte{},
+				time.Now().Add(WriteWait),
+			); err != nil {
+				log.Printf("[WARN] Ping failed for %s: %v", client.ID, err)
+				return
+			}
+		}
+	}
+}
+
+func handleApplicationPing(client *Client) {
+	sendJSON(client, map[string]string{
+		"type": PongMessageType,
+	})
 }
 
 func handleControlMessage(client *Client, rawMsg []byte) {
@@ -148,6 +182,11 @@ func handleControlMessage(client *Client, rawMsg []byte) {
 }
 
 func handleGameMessage(sender *Client, rawMsg []byte) {
+	if sender.LobbyCode == "" {
+		log.Printf("[WARN] Client %s not in any lobby", sender.ID)
+		return
+	}
+
 	lobbyInterface, ok := lobbies.Load(sender.LobbyCode)
 	if !ok {
 		log.Printf("[WARN] Lobby not found for client %s", sender.ID)
@@ -261,7 +300,6 @@ func cleanupConnection(client *Client) {
 			if len(lobby.Clients) == 0 {
 				lobbies.Delete(client.LobbyCode)
 			} else if lobby.HostID == client.ID {
-				// Assign new host
 				for _, newHost := range lobby.Clients {
 					lobby.HostID = newHost.ID
 					break
@@ -346,12 +384,22 @@ func mustMarshal(data interface{}) []byte {
 	return bytes
 }
 
-func generateClientID(r *http.Request) string {
-	return r.RemoteAddr + "-" + time.Now().Format(time.RFC3339Nano)
+func generateClientID() string {
+	return randomString(ClientIDLength)
 }
 
 func generateLobbyCode() string {
-	return "RANDOMCODE"
+	return randomString(LobbyCodeLength)
+}
+
+func randomString(length int) string {
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	rand.Read(b)
+	for i := range b {
+		b[i] = chars[b[i]%byte(len(chars))]
+	}
+	return string(b)
 }
 
 func getPort() string {

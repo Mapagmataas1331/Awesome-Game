@@ -220,6 +220,13 @@ func handleGameMessage(sender *Client, rawMsg []byte) {
 }
 
 func handleLobbyRegistration(client *Client, code string) {
+	if client.LobbyCode != "" {
+		if lobbyInterface, ok := lobbies.Load(client.LobbyCode); ok {
+			lobby := lobbyInterface.(*Lobby)
+			delete(lobby.Clients, client.ID)
+		}
+	}
+
 	if code == "" {
 		code = generateLobbyCode()
 		log.Printf("[INFO] Generated new code: %s for %s", code, client.ID)
@@ -244,6 +251,7 @@ func handleLobbyRegistration(client *Client, code string) {
 	sendJSON(client, map[string]interface{}{
 		"type": "lobby_created",
 		"code": code,
+		"id":   client.ID,
 	})
 	log.Printf("[INFO] Lobby %s created by %s", code, client.ID)
 }
@@ -258,10 +266,11 @@ func handleLobbyJoin(client *Client, code string) {
 	}
 
 	lobby := lobbyInterface.(*Lobby)
-	log.Printf("[INFO] Found lobby %s (created %s ago) with %d players",
-		code, time.Since(lobby.CreatedAt).Round(time.Second), len(lobby.Clients))
 	lobby.mu.Lock()
 	defer lobby.mu.Unlock()
+
+	log.Printf("[INFO] Found lobby %s (created %s ago) with %d players",
+		code, time.Since(lobby.CreatedAt).Round(time.Second), len(lobby.Clients))
 
 	if _, exists := lobby.Clients[client.ID]; exists {
 		log.Printf("[WARN] Client %s already in lobby %s", client.ID, code)
@@ -278,9 +287,9 @@ func handleLobbyJoin(client *Client, code string) {
 	log.Printf("[INFO] %s joined %s. Members: %v", client.ID, code, members)
 
 	sendJSON(client, map[string]interface{}{
-		"type":    "lobby_joined",
-		"code":    code,
-		"members": members,
+		"type": "lobby_joined",
+		"code": code,
+		"id":   client.ID,
 	})
 }
 
@@ -312,8 +321,8 @@ func handleLobbyUnregistration(client *Client, code string) {
 }
 
 func broadcastMessage(lobby *Lobby, senderID string, msg []byte) {
-	log.Printf("[BROADCAST] Lobby %s: Sending message from %s to %d peers",
-		lobby.Code, senderID, len(lobby.Clients)-1)
+	log.Printf("[BROADCAST] Lobby %s: Sending message from %s to %d peers: %s",
+		lobby.Code, senderID, len(lobby.Clients)-1, string(msg))
 	sentCount := 0
 	start := time.Now()
 
@@ -387,7 +396,9 @@ func cleanupExpiredLobbies() {
 }
 
 func closeLobby(lobby *Lobby) {
+	log.Printf("[CLEANUP] Closing lobby %s with %d members", lobby.Code, len(lobby.Clients))
 	for _, client := range lobby.Clients {
+		client.LobbyCode = ""
 		client.Conn.WriteControl(
 			websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Lobby closed"),

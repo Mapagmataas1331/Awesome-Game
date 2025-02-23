@@ -1,16 +1,108 @@
-[gd_scene load_steps=2 format=3 uid="uid://bodt7akw3tq1d"]
+[gd_scene load_steps=5 format=3 uid="uid://bodt7akw3tq1d"]
 
-[sub_resource type="BoxMesh" id="1"]
-size = Vector3(20, 1, 20)
+[sub_resource type="CylinderMesh" id="CylinderMesh"]
+top_radius = 64.0
+bottom_radius = 64.0
+height = 1.0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D"]
+height = 1.0
+radius = 64.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_ygims"]
+size = Vector3(3, 3, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5hbvo"]
+size = Vector3(3, 3, 3)
 
 [node name="World" type="Node3D"]
 
 [node name="Environment" type="WorldEnvironment" parent="."]
 
 [node name="Floor" type="MeshInstance3D" parent="."]
-mesh = SubResource("1")
+mesh = SubResource("CylinderMesh")
 
-[node name="Camera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 5, 5)
+[node name="StaticBody3D" type="StaticBody3D" parent="Floor"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/StaticBody3D"]
+shape = SubResource("CylinderShape3D")
 
 [node name="Players" type="Node3D" parent="."]
+
+[node name="Light" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 64, 64, 64)
+light_color = Color(0.745377, 0.911103, 1, 1)
+light_energy = 0.25
+light_angular_distance = 1.0
+shadow_enabled = true
+
+[node name="Light2" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.707107, 0.590327, -0.389249, 0, 0.550481, 0.834848, 0.707107, 0.590327, -0.389249, -32, 64, -32)
+layers = 2
+light_color = Color(0.896527, 0.67028, 0.57252, 1)
+light_angular_distance = 1.0
+shadow_enabled = true
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(-3, 0, -4.52987e-07, 0, 3, 0, 4.52987e-07, 0, -3, 12.0298, 2.10269, 10.4972)
+text = "Awesome
+Game"
+
+[node name="Box1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2, 12)
+mesh = SubResource("BoxMesh_ygims")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Box1"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Box1/StaticBody3D"]
+shape = SubResource("BoxShape3D_5hbvo")
+
+[node name="Box2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2, -12)
+mesh = SubResource("BoxMesh_ygims")
+skeleton = NodePath("../Box1")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Box2"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Box2/StaticBody3D"]
+shape = SubResource("BoxShape3D_5hbvo")
+
+[node name="Box3" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, 0)
+mesh = SubResource("BoxMesh_ygims")
+skeleton = NodePath("../Box1")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Box3"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Box3/StaticBody3D"]
+shape = SubResource("BoxShape3D_5hbvo")
+
+[node name="Box4" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 9.5272, 1.25685, 11.9365)
+mesh = SubResource("BoxMesh_ygims")
+skeleton = NodePath("../Box1")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Box4"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Box4/StaticBody3D"]
+shape = SubResource("BoxShape3D_5hbvo")
+
+[node name="Box5" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 10.0064, 0.877362, 10.7476)
+mesh = SubResource("BoxMesh_ygims")
+skeleton = NodePath("../Box1")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Box5"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Box5/StaticBody3D"]
+shape = SubResource("BoxShape3D_5hbvo")
+
+[node name="Box6" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 9.82237, 2.38338, 12.1938)
+mesh = SubResource("BoxMesh_ygims")
+skeleton = NodePath("../Box1")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Box6"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Box6/StaticBody3D"]
+shape = SubResource("BoxShape3D_5hbvo")

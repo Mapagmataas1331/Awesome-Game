@@ -5,3 +5,4 @@
 
 addons/godotsteam/win64/~libgodotsteam.windows.template_debug.x86_64.dll
 addons/webrtc/lib/~libwebrtc_native.windows.template_debug.x86_64.dll
+output.txt

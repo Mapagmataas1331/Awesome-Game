@@ -61,7 +61,7 @@ func _add_steam_peer(member_id: int):
 		players[member_id] = new_player
 		# Initialize with default position
 		new_player.global_transform.origin = Vector3(randf_range(-2,2), 0, randf_range(-2,2))
-		GameManager.register_player(member_id, {
+		GameManager.register_player(str(member_id), {
 			"name": Steam.getFriendPersonaName(member_id),
 			"position": new_player.global_transform.origin,
 			"ready": false

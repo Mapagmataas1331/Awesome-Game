@@ -1,11 +1,37 @@
-[gd_scene load_steps=3 format=3 uid="uid://b5672ujqmp3bl"]
+[gd_scene load_steps=6 format=3 uid="uid://b5672ujqmp3bl"]
 
 [ext_resource type="Script" path="res://src/scripts/game/player.gd" id="1_wolb4"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_qpbpm"]
+[sub_resource type="BoxMesh" id="BoxMesh_moshg"]
+size = Vector3(0.6, 0.5, 0.5)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_uby7m"]
+size = Vector3(0.5, 1, 0.5)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D"]
 
 [node name="Player" type="CharacterBody3D"]
+collision_layer = 2
 script = ExtResource("1_wolb4")
 
+[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="."]
+
+[node name="head" type="MeshInstance3D" parent="MultiMeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.5, -0.258282)
+mesh = SubResource("BoxMesh_moshg")
+
+[node name="Body" type="MeshInstance3D" parent="MultiMeshInstance3D"]
+mesh = SubResource("CapsuleMesh")
+skeleton = NodePath("../..")
+
+[node name="Backpack" type="MeshInstance3D" parent="MultiMeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.35)
+mesh = SubResource("BoxMesh_uby7m")
+
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("CapsuleShape3D_qpbpm")
+shape = SubResource("CapsuleShape3D")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

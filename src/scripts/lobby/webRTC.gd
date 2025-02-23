@@ -1,19 +1,34 @@
 extends BaseLobby
 class_name WebRTCLobby
 
-const SIGNALING_SERVER = "ws://thirsty-cherice-macyou-8179e8d5.koyeb.app/"
-const ICE_SERVERS = [{"urls": ["stun:stun.l.google.com:19302"]}]
+const SIGNALING_SERVER = "wss://thirsty-cherice-macyou-8179e8d5.koyeb.app/"
+const ICE_SERVERS = [
+	# STUN
+	{"urls": ["stun:stun.l.google.com:19302"]},
+	
+	# TURN
+	{
+		"urls": [
+			"turn:openrelay.metered.ca:80",
+			"turn:openrelay.metered.ca:443",
+			"turn:openrelay.metered.ca:443?transport=tcp"
+		],
+		"username": "openrelayproject",
+		"credential": "openrelayproject"
+	}
+]
 const DATA_CHANNEL_ID = 1
 const LOBBY_TIMEOUT = 60.0
 const PING_TIMEOUT = 60.0
 
+var players_node: Node3D
+var player_scene = preload("res://src/scenes/game/player.tscn")
 var peer: WebRTCPeerConnection
 var signaling: WebSocketPeer
 var lobby_code := ""
 var is_host := false
 var data_channel: WebRTCDataChannel
 var channel_ready := false
-var local_player_id := ""
 var connection_timer: Timer
 var ping := {"last_ping": 0.0, "last_pong": 0.0}
 var signaling_queue: Array = []
@@ -23,6 +38,8 @@ var next_player_id := 2
 func _ready() -> void:
 	print("[WebRTC] Initializing lobby...")
 	super._ready()
+	local_player_id = ""
+	players_node = get_node("World/Players")
 	init_network()
 	init_ui()
 	setup_connection_timer()
@@ -171,6 +188,30 @@ func cleanup_connections() -> void:
 	cleanup_previous_connection()
 	if signaling.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		signaling.close()
+		
+func spawn_player(player_id: String, is_local: bool = false):
+	if players_node.has_node(player_id):
+		return
+	
+	var new_player = player_scene.instantiate()
+	new_player.name = player_id
+	new_player.is_local = is_local
+	new_player.global_transform.origin = Vector3(
+		randf_range(-4,4),
+		4.0,
+		randf_range(-4,4)
+	)
+	players_node.add_child(new_player)
+	
+	if is_local:
+		local_player = new_player
+		print("Spawned local player: ", player_id)
+
+func despawn_player(player_id: String):
+	var player = players_node.get_node_or_null(player_id)
+	if player:
+		player.queue_free()
+		print("Despawned player: ", player_id)
 #endregion
 
 #region Player Management
@@ -179,12 +220,24 @@ func add_new_player(player_id: String) -> void:
 	if not players.has(player_id):
 		players[player_id] = {"name": player_id, "ready": false}
 		update_player_list()
+		if is_host:
+			spawn_player(player_id)
+			send_data_channel_message({
+				"type": "spawn_player",
+				"player_id": player_id
+			})
 
 func remove_player(player_id: String) -> void:
 	print("[Player] Removing player: ", player_id)
 	if players.has(player_id):
 		players.erase(player_id)
 		update_player_list()
+		if is_host:
+			send_data_channel_message({
+				"type": "despawn_player",
+				"player_id": player_id
+			})
+		despawn_player(player_id)
 
 func handle_new_host(player_id: String) -> void:
 	print("[Host] New host assigned: ", player_id)
@@ -333,14 +386,17 @@ func handle_ice_candidate(data: Dictionary) -> void:
 
 func handle_lobby_created(data: Dictionary) -> void:
 	lobby_code = data.code
-	local_player_id = data.id
+	local_player_id = str(data.id)
+	GameManager.local_player_id = local_player_id
 	players = {local_player_id: {"name": SettingsManager.player_name, "ready": false}}
 	update_code_display()
 	update_player_list()
+	spawn_player(local_player_id, true)
 
 func handle_lobby_joined(data: Dictionary) -> void:
 	lobby_code = data.code
-	local_player_id = data.id
+	local_player_id = str(data.id)
+	GameManager.local_player_id = local_player_id
 	var new_name = SettingsManager.player_name
 	
 	players[local_player_id] = {
@@ -363,11 +419,12 @@ func handle_lobby_joined(data: Dictionary) -> void:
 	send_signaling_message(JSON.stringify({
 		"type": "request_offer"
 	}))
+	spawn_player(local_player_id, true)
 
 func handle_system_message(data: Dictionary) -> void:
 	match data.subtype:
 		"player_joined":
-			var player_id = data.content
+			var player_id = str(data.content)
 			if is_host:
 				players[player_id] = {
 					"name": player_id,
@@ -376,10 +433,11 @@ func handle_system_message(data: Dictionary) -> void:
 				broadcast_player_update()
 				update_player_list()
 				peer.create_offer()
+			add_new_player(player_id)
 		"player_left":
-			remove_player(data.content)
+			remove_player(str(data.content))
 		"new_host":
-			handle_new_host(data.content)
+			handle_new_host(str(data.content))
 #endregion
 
 #region Data Channel Handling
@@ -441,6 +499,21 @@ func _on_data_received(message: String) -> void:
 				else:
 					players[player_id] = data.state
 					update_player_list()
+		"player_spawn":
+			spawn_player(str(data.player_id))
+		"player_despawn":
+			despawn_player(str(data.player_id))
+		"player_state":
+			var player_id = str(data.player_id)
+			if player_id != local_player_id:
+				var player = players_node.get_node_or_null(player_id)
+				if player:
+					var pos = data.position
+					var rot = data.rotation
+					player.update_network_state(
+						Vector3(pos.x, pos.y, pos.z),
+						Vector3(rot.x, rot.y, rot.z)
+					)
 
 func send_data_channel_message(data: Dictionary) -> void:
 	print("[DataChannel] Sending: ", data)

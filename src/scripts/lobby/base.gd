@@ -8,6 +8,7 @@ signal game_started
 var players := {}      # Dictionary to keep track of player nodes.
 var local_player: Node3D
 var lobby_ui: CanvasLayer
+var local_player_id := ""
 
 func _ready() -> void:
 	# Initialize network (overridden in child classes if needed)
@@ -23,18 +24,13 @@ func _ready() -> void:
 
 # Creates the local player and registers it with the GameManager.
 func create_local_player() -> void:
-	# Updated player scene path (using assets/scenes/game/player.tscn)
-	var player_scene = preload("res://src/scenes/game/player.tscn")
-	local_player = player_scene.instantiate()
-	# In the lobby scene, the Players node is assumed to be a direct child of the root.
-	get_node("Players").add_child(local_player)
-	# Assign a local ID and register this player.
-	GameManager.local_player_id = get_local_player_id()
-	GameManager.register_player(GameManager.local_player_id, {
-		"name": get_player_name(),
-		"position": local_player.global_transform.origin,
-		"ready": false
-	})
+	if local_player_id != "":
+		GameManager.local_player_id = local_player_id
+		GameManager.register_player(GameManager.local_player_id, {
+			"name": get_player_name(),
+			"position": local_player.global_transform.origin,
+			"ready": false
+		})
 
 # Loads the UI (assumed to be already instanced in the scene under the "UI" node).
 func setup_ui() -> void:
@@ -56,11 +52,6 @@ func update_player_position(id: int, position: Vector3) -> void:
 	if players.has(id):
 		players[id].global_transform.origin = position
 
-# --- Abstract / To-be-implemented methods for subclasses ---
-
-# Returns a local player ID (override as needed).
-func get_local_player_id() -> int:
-	return 0
 
 # Returns the player name (override as needed).
 func get_player_name() -> String:

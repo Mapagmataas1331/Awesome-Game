@@ -20,7 +20,7 @@ var master_volume: float = 1.0
 var fullscreen: bool = false
 var vsync: bool = true
 var resolution: Vector2i = Vector2i(1024, 576)
-var mouse_sensitivity: float = 0.1
+var mouse_sensitivity: float = 0.3
 var player_name: String = "Player"
 
 func _ready():
@@ -80,7 +80,7 @@ func load_settings():
 			fullscreen = true
 			vsync = true
 			resolution = Vector2i(1152, 648)
-			mouse_sensitivity = 0.1
+			mouse_sensitivity = 0.3
 			player_name = "Player"
 	else:
 		var config = ConfigFile.new()

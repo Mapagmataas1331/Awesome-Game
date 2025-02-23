@@ -77,6 +77,7 @@ func init() {
 }
 
 func main() {
+	debugLogf("[DEBUG] Debug logging enabled")
 	log.Printf("[INFO] Starting WebSocket server on port %s", serverPort)
 	go cleanupExpiredLobbies()
 	http.HandleFunc("/", handleWebSocket)
@@ -93,7 +94,8 @@ func checkOrigin(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
 	allowed := (origin == "" || origin == AllowedOrigin)
 	debugLogf("[DEBUG] checkOrigin: Received origin '%s', allowed: %t", origin, allowed)
-	return allowed
+	//return allowed
+	return true
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {

@@ -178,6 +178,8 @@ func cleanup_previous_connection() -> void:
 	if data_channel:
 		data_channel.close()
 		data_channel = null
+	for player_id in players.keys():
+		remove_player(player_id)
 	lobby_code = ""
 	channel_ready = false
 	pending_ice_candidates.clear()
@@ -190,7 +192,7 @@ func cleanup_connections() -> void:
 		signaling.close()
 		
 func spawn_player(player_id: String, is_local: bool = false):
-	if players_node.has_node(player_id):
+	if players_node.has_node(player_id) or player_id == "":
 		return
 	
 	var new_player = player_scene.instantiate()
@@ -208,6 +210,8 @@ func spawn_player(player_id: String, is_local: bool = false):
 		print("Spawned local player: ", player_id)
 
 func despawn_player(player_id: String):
+	if not players_node.has_node(player_id) or player_id == "":
+		return
 	var player = players_node.get_node_or_null(player_id)
 	if player:
 		player.queue_free()
@@ -220,12 +224,11 @@ func add_new_player(player_id: String) -> void:
 	if not players.has(player_id):
 		players[player_id] = {"name": player_id, "ready": false}
 		update_player_list()
-		if is_host:
-			spawn_player(player_id)
-			send_data_channel_message({
-				"type": "spawn_player",
-				"player_id": player_id
-			})
+		spawn_player(player_id)
+		send_data_channel_message({
+			"type": "spawn_player",
+			"player_id": player_id
+		})
 
 func remove_player(player_id: String) -> void:
 	print("[Player] Removing player: ", player_id)
@@ -313,7 +316,7 @@ func process_data_channel() -> void:
 			while data_channel.get_available_packet_count() > 0:
 				var packet = data_channel.get_packet()
 				var packet_string = packet.get_string_from_utf8()
-				print("[DataChannel] recieved: ", packet, packet_string)
+				# print("[DataChannel] recieved: ", packet, packet_string)
 				_on_data_received(packet_string)
 #endregion
 
@@ -514,9 +517,11 @@ func _on_data_received(message: String) -> void:
 						Vector3(pos.x, pos.y, pos.z),
 						Vector3(rot.x, rot.y, rot.z)
 					)
+				else:
+					spawn_player(player_id)
 
 func send_data_channel_message(data: Dictionary) -> void:
-	print("[DataChannel] Sending: ", data)
+	#print("[DataChannel] Sending: ", data)
 	if channel_ready:
 		data_channel.put_packet(JSON.stringify(data).to_utf8_buffer())
 #endregion

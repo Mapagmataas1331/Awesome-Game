@@ -6,10 +6,10 @@ extends CharacterBody3D
 
 var target_position: Vector3
 var target_rotation: Vector3
+var update_interval := 0.1
 var is_local := false
 var last_update := 0.0
 var last_key_event := 0.0
-var update_interval := 1
 
 func _ready():
 	target_position = global_transform.origin
